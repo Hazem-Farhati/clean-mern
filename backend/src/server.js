@@ -1,12 +1,12 @@
 const dotenv = require("dotenv");
+dotenv.config();
+
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const connectDB = require("./config/db");
 const userRoutes = require("./routes/userRoutes");
-
-dotenv.config();
 
 const app = express();
 
@@ -26,7 +26,6 @@ app.get("/", (req, res) => {
 
 // Use user routes for any requests that start with /api/users
 app.use("/api/users", userRoutes);
-
 
 // Start the server
 const PORT = process.env.PORT || 5000;

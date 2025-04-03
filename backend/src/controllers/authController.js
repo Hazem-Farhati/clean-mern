@@ -2,44 +2,31 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const User = require("../models/User");
+const { generateToken } = require("../utils/token");
+const { hashPassword, comparePassword } = require("../utils/password");
+const sendEmail = require("../utils/email");
 
 const { validationResult } = require("express-validator");
 const { getAllUsers } = require("../services/userService");
-
-const transporter = nodemailer.createTransport({
-  host: "smtp.example.com",
-  service: "gmail",
-  port: 587,
-  secure: false,
-  auth: {
-    user: "hazemfarhati@gmail.com",
-    pass: "cdgq iuvf crbk nwvs",
-  },
-});
+const errorHandler = require("../utils/errorHandler");
 
 // Register User
 const registerUser = async (req, res) => {
-  const { username, nom, prenom, email, password } = req.body;
-
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+    const { username, nom, prenom, email, password } = req.body;
+
+    // Validate fields
+    if (!username || !nom || !prenom || !email || !password) {
+      return res.status(400).json({ message: "All fields are required." });
     }
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).send({ msg: "Email already exists" });
-    }
+    // Hash password
+    const hashedPassword = await hashPassword(password);
 
-    const salt = 10;
-    const genSalt = await bcrypt.genSalt(salt);
-    const hashedPassword = await bcrypt.hash(password, genSalt);
+    // Generate activation token
+    const activationToken = generateToken({ email });
 
-    const activationToken = jwt.sign({ email }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
-
+    // Save user
     const newUser = new User({
       username,
       nom,
@@ -49,31 +36,19 @@ const registerUser = async (req, res) => {
       activationToken,
     });
 
-    const result = await newUser.save();
+    await newUser.save();
 
+    // Send email
     const verificationUrl = `http://localhost:5000/api/users/verify-account/${activationToken}`;
-    const mailOptions = {
-      from: "hazemfarhati@gmail.com",
-      to: email,
-      subject: "Verify Your Account",
-      text: `To verify your account, please click the following link: ${verificationUrl}`,
-    };
+    await sendEmail(
+      email,
+      "Verify Your Account",
+      `Click here: ${verificationUrl}`
+    );
 
-    await transporter.sendMail(mailOptions);
-
-    const payload = { _id: result._id, nom: result.nom };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: 1000 * 60 * 60 * 24,
-    });
-
-    res.send({
-      user: result,
-      msg: "User is saved",
-      token: `Bearer ${token}`,
-    });
+    res.json({ msg: "User registered. Please check your email." });
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Cannot save the user");
+    errorHandler(res, error);
   }
 };
 
@@ -133,36 +108,52 @@ const verifyAccount = async (req, res) => {
 };
 
 // Forgot Password
+// Forgot Password
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ msg: "Email is required" });
+  }
 
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).send({ msg: "User not found" });
+      return res.status(404).json({ msg: "User not found" });
     }
 
-    const resetToken = jwt.sign({ userId: user._id }, "your_secret_key", {
+    // Generate reset token
+    const resetToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
+
+    // Save reset token and expiration time
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
+    // Construct the reset URL
     const resetUrl = `http://localhost:5000/api/users/reset-password/${resetToken}`;
-    const mailOptions = {
-      from: "hazemfarhati@gmail.com",
-      to: email,
-      subject: "Reset Password",
-      text: `To reset your password, please click the following link: ${resetUrl}`,
-    };
 
-    await transporter.sendMail(mailOptions);
+    // Log to check the data before sending
+    console.log("Sending email to:", email);
+    console.log("Subject:", "Reset Your Password");
+    console.log(
+      "Body:",
+      `To reset your password, please click the following link: ${resetUrl}`
+    );
 
-    res.send({ msg: "Password reset email sent" });
+    // Send the email
+    await sendEmail(
+      email,
+      "Reset Your Password",
+      `To reset your password, please click the following link: ${resetUrl}`
+    );
+
+    res.status(200).json({ msg: "Password reset email sent" });
   } catch (error) {
     console.error(error);
-    res.status(500).send({ msg: "Internal server error" });
+    res.status(500).json({ msg: "Internal server error" });
   }
 };
 
@@ -171,25 +162,33 @@ const resetPassword = async (req, res) => {
   const { token } = req.params;
   const { password } = req.body;
 
+  if (!password) {
+    return res.status(400).json({ msg: "Password is required" });
+  }
+
   try {
     const user = await User.findOne({ resetPasswordToken: token });
     if (!user) {
-      return res.status(400).json({ message: "Invalid or expired token" });
+      return res.status(400).json({ msg: "Invalid or expired token" });
     }
 
+    if (user.resetPasswordExpires < Date.now()) {
+      return res.status(400).json({ msg: "Token has expired" });
+    }
+
+    // Hash the new password
     const salt = 10;
-    const genSalt = await bcrypt.genSalt(salt);
-    const hashedPassword = await bcrypt.hash(password, genSalt);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
     user.password = hashedPassword;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
+    user.resetPasswordToken = undefined; // Clear reset token
+    user.resetPasswordExpires = undefined; // Clear expiration time
     await user.save();
 
-    res.status(200).json({ message: "Password reset successful" });
+    res.status(200).json({ msg: "Password reset successful" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    res.status(500).json({ msg: "Internal server error" });
   }
 };
 
