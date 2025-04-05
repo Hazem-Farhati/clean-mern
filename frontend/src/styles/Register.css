@@ -1,0 +1,58 @@
+.registerLogin_box {
+  width: 450px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.registerLogin_box form {
+  width: 80%;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.registerLogin_box  h1 {
+  margin-bottom: 15px;
+}
+.registerLogin_box  h5 {
+  margin-top: 7px;
+  width: 100%;
+  text-align: left;
+}
+.registerLogin_box label {
+  width: 100%;
+  margin-bottom: 7px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+}
+.registerLogin_box  input {
+  width: 98%;
+  text-align: left;
+  margin-bottom: 7px;
+  padding-left: 2%;
+  height: 35px;
+  border: none;
+  border-radius: 15px;
+  background-color: #f4f7f9;
+  font-weight: 600;
+  outline: none;
+}
+.registerLogin_box form button {
+  width: 100%;
+  height: 38px;
+  background-color: #f39a36;
+  margin-top: 7px;
+  border-radius: 15px;
+  margin-bottom: 7px;
+  color: white;
+  font-weight: 600;
+  transition: 1s all ease;
+}
+.registerLogin_box  button:hover {
+  background-color: rgb(199, 199, 199);
+}
+

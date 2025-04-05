@@ -1,0 +1,52 @@
+.Registerlogin {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 50px 0;
+}
+.Registerlogin .registerLgin-Content {
+  width: 900px;
+  height: 100%;
+  border-radius: 30px;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+.Registerlogin .registerLgin-Content .imageanime {
+  width: 450px;
+  height: 100%;
+  border-radius: 30px;
+  left: 0;
+  transition: 1s;
+  position: absolute;
+  overflow: hidden;
+}
+.Registerlogin .registerLgin-Content .imageanime1 {
+  width: 450px;
+  height: 100%;
+  border-radius: 30px;
+  left: 50%;
+  transition: 1s;
+  position: absolute;
+  overflow: hidden;
+}
+
+.Registerlogin .registerLgin-Content .imageanime img {
+  width: 100%;
+}
+.Registerlogin .registerLgin-Content .imageanime1 img {
+  width: 100%;
+}
+.Registerlogin .registerLgin-Content .registerLgincontainer {
+  width: 450px;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

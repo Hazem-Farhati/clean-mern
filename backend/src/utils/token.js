@@ -6,7 +6,7 @@ const generateToken = (payload) => {
 
 const verifyToken = (token) => {
   try {
-    return jwt.verify(token, process.env.JWT_SECRET);
+    return jwt.verify(token, process.env.JWT_SECRET, { expiresIn: "7d" });
   } catch (error) {
     return null;
   }

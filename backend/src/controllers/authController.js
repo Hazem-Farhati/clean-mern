@@ -39,7 +39,7 @@ const registerUser = async (req, res) => {
     await newUser.save();
 
     // Send email
-    const verificationUrl = `http://localhost:5000/api/users/verify-account/${activationToken}`;
+    const verificationUrl = `http://localhost:5173/api/users/verify-account/${activationToken}`;
     await sendEmail(
       email,
       "Verify Your Account",
@@ -133,7 +133,7 @@ const forgotPassword = async (req, res) => {
     await user.save();
 
     // Construct the reset URL
-    const resetUrl = `http://localhost:5000/api/users/reset-password/${resetToken}`;
+    const resetUrl = `http://localhost:5173/api/users/reset-password/${resetToken}`;
 
     // Log to check the data before sending
     console.log("Sending email to:", email);
