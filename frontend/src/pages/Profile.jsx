@@ -9,7 +9,7 @@ const Profile = () => {
 
   //get current user with selector
   const user = useSelector((state) => state.user?.user);
-  console.log(user?.isActivated);
+  console.log(user,"user");
   return (
     <>
       {user?.isActivated == true ? (

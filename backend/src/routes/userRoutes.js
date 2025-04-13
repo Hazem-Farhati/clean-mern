@@ -8,14 +8,17 @@ const {
   resetPassword,
   getCurrentUser,
   getAllUsersController,
+  googleAuth,
+  googleCallback,
+  googleLogin,
 } = require("../controllers/authController");
 const {
   loginRules,
   registerRules,
   Validation,
 } = require("../middleware/auth-validator");
-const isAuth = require("../middleware/passport");
 const authMiddleware = require("../middleware/authMiddleware");
+const passport = require("passport");
 
 // Register route
 userRouter.post("/register", registerRules(), Validation, registerUser);
@@ -31,11 +34,23 @@ userRouter.post("/forgot-password", forgotPassword);
 
 // Reset password route
 userRouter.post("/reset-password/:token", resetPassword);
-// get all users route
+
+// Get all users route
 userRouter.get("/getAllUsers", getAllUsersController);
 
-// current user route
-
+// Current user route
 userRouter.get("/current", authMiddleware, getCurrentUser);
+
+// === Google OAuth Routes ===
+userRouter.get("/google", googleAuth);
+
+// Google callback route (Handle registration and login)
+userRouter.get(
+  "/google/callback",
+  passport.authenticate("google", { session: false, failureRedirect: "/" }),
+  googleCallback
+);
+
+userRouter.post("/google/callback", googleLogin);
 
 module.exports = userRouter;

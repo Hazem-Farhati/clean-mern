@@ -7,13 +7,20 @@ const Verifyaccount = () => {
   const navigate = useNavigate();
   const { token } = useParams();
   const dispatch = useDispatch();
+ useEffect(() => {
+   if (token) {
   console.log(token, "hhhhh");
-  useEffect(() => {
-    dispatch(activateAccount({ token: token }));
+    
+    // saveToken(toke n);  // Save the token to localStorage or Redux
+    dispatch(activateAccount({ token }));  // Optionally, update Redux state
+            localStorage.setItem("token",token);
+
     setTimeout(() => {
-      navigate("/");
+      navigate("/");  // Redirect to profile after successful verification
     }, 1000);
-  }, []);
+  }
+}, [token, dispatch, navigate]);
+
   return <div>Verifyaccount</div>;
 };
 

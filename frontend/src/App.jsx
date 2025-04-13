@@ -9,6 +9,7 @@ import Verifyaccount from "./Pages/Verifyaccount";
 import Forgotpassword from "./Pages/Forgotpassword";
 import Reset_password from "./Pages/Reset_password";
 import Registerlogin from "./Pages/Registerlogin";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 // --------------------end importation------------------
 function App() {
@@ -29,17 +30,27 @@ function App() {
   return (
     <div>
       <div className="app">
-        <Routes>
-          {/* home route */}
-          <Route path="/" element={<Registerlogin />} /> {/* Register route */}
-          <Route path="/profile" element={<Profile />} /> {/* Profile route */}
-          <Route path="/api/users/verify-account/:token" element={<Verifyaccount />} />
-          {/*verification compte */}
-          <Route path="/forgotpassword" element={<Forgotpassword />} />
-          {/* forgot password */}
-          <Route path="/api/users/reset-password/:token" element={<Reset_password />} />
-          {/* reset password */}
-        </Routes>
+        <GoogleOAuthProvider clientId="955918900256-451d1dgfd2qd1am97fjrg5d2d48ntmop.apps.googleusercontent.com">
+          <Routes>
+            {/* home route */}
+            <Route path="/" element={<Registerlogin />} />{" "}
+            {/* Register route */}
+            <Route path="/profile" element={<Profile />} />{" "}
+            {/* Profile route */}
+            <Route
+              path="/api/users/verify-account/:token"
+              element={<Verifyaccount />}
+            />
+            {/*verification compte */}
+            <Route path="/forgotpassword" element={<Forgotpassword />} />
+            {/* forgot password */}
+            <Route
+              path="/api/users/reset-password/:token"
+              element={<Reset_password />}
+            />
+            {/* reset password */}
+          </Routes>
+        </GoogleOAuthProvider>
       </div>
     </div>
   );

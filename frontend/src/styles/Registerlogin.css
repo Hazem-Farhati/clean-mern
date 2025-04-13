@@ -21,7 +21,7 @@
   width: 450px;
   height: 100%;
   border-radius: 30px;
-  left: 0;
+  right: 0;
   transition: 1s;
   position: absolute;
   overflow: hidden;
@@ -30,7 +30,7 @@
   width: 450px;
   height: 100%;
   border-radius: 30px;
-  left: 50%;
+  right: 50%;
   transition: 1s;
   position: absolute;
   overflow: hidden;

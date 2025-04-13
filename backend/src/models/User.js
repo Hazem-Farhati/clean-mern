@@ -32,8 +32,15 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
       minlength: 6,
+      required: function () {
+        return this.authType !== "google"; // Password is required unless authType is 'google'
+      },
+    },
+    authType: {
+      type: String,
+      enum: ["google", "credentials"], // Allowed values are "google" or "credentials"
+      required: true,
     },
     isActivated: {
       type: Boolean,

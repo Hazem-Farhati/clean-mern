@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
+import { getToken, removeToken, saveToken } from "../../services/token";
 
 //register
 export const userRegister = createAsyncThunk("user/register", async (user) => {
@@ -31,7 +32,10 @@ export const activateAccount = createAsyncThunk(
 //login
 export const userLogin = createAsyncThunk("user/login", async (user) => {
   try {
-    let result = await axios.post("http://localhost:5000/api/users/login", user);
+    let result = await axios.post(
+      "http://localhost:5000/api/users/login",
+      user
+    );
     // console.log(result.data)
     return result.data;
   } catch (error) {
@@ -41,15 +45,22 @@ export const userLogin = createAsyncThunk("user/login", async (user) => {
 //current user
 export const userCurrent = createAsyncThunk("user/current", async () => {
   try {
-    let result = await axios.get("http://localhost:5000/api/users/current", {
+    // Make sure you are passing the token properly
+    const token = getToken(); // This should retrieve the token from localStorage or state
+    if (!token) {
+      throw new Error("No token found");
+    }
+
+    const result = await axios.get("http://localhost:5000/api/users/current", {
       headers: {
-        Authorization: localStorage.getItem("token"),
+        Authorization: `Bearer ${token}`, // Ensure Bearer prefix is added
       },
     });
-    // console.log(result.data)
+
     return result.data;
   } catch (error) {
     console.log(error);
+    throw error; // Make sure to throw the error so the action fails if something goes wrong
   }
 });
 export const getusers = createAsyncThunk("user/getall", async () => {
@@ -96,6 +107,22 @@ export const resetpassword = createAsyncThunk(
   }
 );
 
+export const googleLogin = createAsyncThunk(
+  "user/googleLogin",
+  async (googleUser) => {
+    const res = await axios.post(
+      "http://localhost:5000/api/users/google/callback",
+      googleUser
+    );
+    const data = res.data;
+
+    // Save token to localStorage
+    localStorage.setItem("token", data.token);
+
+    return data; // includes user + token
+  }
+);
+
 const initialState = {
   user: null,
   status: null,
@@ -107,7 +134,7 @@ export const userSlice = createSlice({
   reducers: {
     logout: (state, action) => {
       state.user = null;
-      localStorage.removeItem("token");
+      removeToken();
     },
   },
   extraReducers: (builder) => {
@@ -132,7 +159,7 @@ export const userSlice = createSlice({
       .addCase(activateAccount.fulfilled, (state, action) => {
         state.status = "success";
         state.user = action.payload.user;
-        // localStorage.setItem("token", action.payload.token);
+        localStorage.setItem("token", action.payload.token);
       })
       .addCase(activateAccount.rejected, (state) => {
         state.status = "fail";
@@ -176,7 +203,7 @@ export const userSlice = createSlice({
         // Check if 'user' and 'token' properties exist in action.payload
         if (action.payload && action.payload.user && action.payload.token) {
           state.user = action.payload.user;
-          localStorage.setItem("token", action.payload.token);
+          saveToken(action.payload.token);
         } else {
           console.error("Invalid payload structure:", action.payload);
           // Optionally handle the error or set state to an appropriate value
@@ -213,7 +240,19 @@ export const userSlice = createSlice({
       })
       .addCase(getusers.rejected, (state) => {
         state.status = "fail";
-      });
+      })
+    
+     .addCase(googleLogin.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(googleLogin.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload.user; // 👈 Save user in Redux
+      })
+      .addCase(googleLogin.rejected, (state, action) => {
+        state.loading = false;
+        state.error = "Google login failed";
+      })
   },
 });
 

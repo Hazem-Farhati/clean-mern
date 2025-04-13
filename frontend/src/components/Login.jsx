@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
-import { userLogin } from "../redux/userSlice/userSlice";
+import { userLogin, googleLogin } from "../redux/userSlice/userSlice"; // Import your googleLogin action
 import { Link, useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google"; // Import GoogleLogin component
 
 const Login = ({ show, setShow }) => {
   const [login, setLogin] = useState({
@@ -9,10 +10,12 @@ const Login = ({ show, setShow }) => {
     password: "",
   });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  // Handle regular login with email and password
   const handleLogin = async () => {
     try {
       setError("");
@@ -24,8 +27,24 @@ const Login = ({ show, setShow }) => {
       }
     } catch (error) {
       setError("Email or password incorrect.");
-
       console.error("Login error:", error);
+    }
+  };
+
+  // Handle Google login
+  const handleGoogleLogin = async (response) => {
+    try {
+      const googleToken = response.credential;
+      const googleUser = { token: googleToken };
+
+      const googleResponse = await dispatch(googleLogin(googleUser));
+
+      if (googleResponse.payload.token) {
+        navigate("/profile");
+      }
+    } catch (error) {
+      setError("Google login failed. Please try again.");
+      console.error("Google login error:", error);
     }
   };
 
@@ -33,15 +52,8 @@ const Login = ({ show, setShow }) => {
     <div className="registerLogin_box">
       <form onSubmit={(e) => e.preventDefault()}>
         <h1>SIGN IN</h1>
-        {error ? (
-          <label style={{ color: "red" }}>{error}</label>
-        ) : (
-          <label
-            style={{ color: "transparent", backgroundColor: "transparent" }}
-          >
-            ffff
-          </label>
-        )}
+        {error && <label style={{ color: "red" }}>{error}</label>}
+
         <label>Email:</label>
         <input
           type="email"
@@ -49,6 +61,7 @@ const Login = ({ show, setShow }) => {
           value={login.email}
           onChange={(e) => setLogin({ ...login, email: e.target.value })}
         />
+
         <label>Password:</label>
         <input
           type="password"
@@ -56,15 +69,18 @@ const Login = ({ show, setShow }) => {
           value={login.password}
           onChange={(e) => setLogin({ ...login, password: e.target.value })}
         />
-        <button className="submit" onClick={handleLogin}>
-          Login
+
+        <button className="submit" onClick={handleLogin} disabled={loading}>
+          {loading ? "Logging in..." : "Login"}
         </button>
+
         <h5>
           You don't have an account?{" "}
           <span style={{ color: "#f39a36" }} onClick={() => setShow(!show)}>
             Sign up
           </span>
         </h5>
+
         <h5>
           Forgot your password?{" "}
           <Link
@@ -74,6 +90,12 @@ const Login = ({ show, setShow }) => {
             Reset password
           </Link>
         </h5>
+
+        {/* Google OAuth Button */}
+        <GoogleLogin
+          onSuccess={handleGoogleLogin}
+          onError={() => setError("Google Login failed. Please try again.")}
+        />
       </form>
     </div>
   );

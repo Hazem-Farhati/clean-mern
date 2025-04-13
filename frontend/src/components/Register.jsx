@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { userRegister } from "../redux/userSlice/userSlice";
+import { GoogleLogin } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
 import "../styles/Register.css";
+
 const Register = ({ show, setShow }) => {
   const [register, setRegister] = useState({
     username: "",
@@ -21,22 +24,23 @@ const Register = ({ show, setShow }) => {
   const dispatch = useDispatch();
 
   const handleRegister = async () => {
+    // Validate input fields
     if (register.password.length < 6) {
       setPasswordError("Password must be at least 6 characters long");
     } else {
       setPasswordError("");
     }
-    if (register.username == "") {
+    if (register.username === "") {
       setUsernameError("Username is required.");
     } else {
       setUsernameError("");
     }
-    if (register.prenom == "") {
+    if (register.prenom === "") {
       setLastnameError("Lastname is required.");
     } else {
       setLastnameError("");
     }
-    if (register.nom == "") {
+    if (register.nom === "") {
       setfirstnameError("Firstname is required.");
     } else {
       setfirstnameError("");
@@ -48,20 +52,69 @@ const Register = ({ show, setShow }) => {
     } else {
       setEmailError("");
     }
+
     if (
       register.password.length >= 6 &&
-      register.username != "" &&
-      register.nom != "" &&
-      register.prenom != "" &&
+      register.username !== "" &&
+      register.nom !== "" &&
+      register.prenom !== "" &&
       emailRegex.test(register.email)
     ) {
       try {
         await dispatch(userRegister(register));
-
         navigate("/profile");
       } catch (error) {
-        setEmailError("Email already exists");
+        if (
+          error.response &&
+          error.response.data.message === "Email is already registered."
+        ) {
+          setEmailError("Email already exists. Please use another email.");
+        } else {
+          setEmailError("An error occurred. Please try again.");
+        }
       }
+    }
+  };
+
+  // Handle Google login response
+  const handleGoogleLogin = async (response) => {
+    try {
+      const googleToken = response.credential;
+      console.log(googleToken, "googleToken");
+      // Decode the Google token to get user details (e.g., email, name)
+      const decodedToken = jwtDecode(googleToken);
+      const { email, name } = decodedToken;
+      const [prenom, nom] = name.split(" "); // Split name into first and last name
+
+      // Prepare user data with Google login info
+      const googleUser = {
+        username: email.split("@")[0], // Use email as username
+        nom, // Last name from Google
+        prenom, // First name from Google
+        email, // Email from Google
+        password: "defaultPassword123", // Set a default password or leave it empty
+        authType: "google", // Mark as Google auth type
+        isActivated: true,
+      };
+
+      // Send the data to the backend for registration
+      try {
+        await dispatch(userRegister(googleUser));
+        navigate("/profile");
+      } catch (error) {
+        if (
+          error.response &&
+          error.response.data.message === "Email is already registered."
+        ) {
+          setEmailError("Email already exists. Please use another email.");
+        } else {
+          setEmailError(
+            "An error occurred during Google login. Please try again."
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Google login failed:", error);
     }
   };
 
@@ -136,7 +189,7 @@ const Register = ({ show, setShow }) => {
         />
         <button
           className="submit"
-          onClick={handleRegister} // Appel à la fonction handleRegister
+          onClick={handleRegister} // Handle regular registration
         >
           Register
         </button>
@@ -147,6 +200,12 @@ const Register = ({ show, setShow }) => {
             Sign in
           </span>
         </h5>
+
+        {/* Google OAuth Button */}
+        <GoogleLogin
+          onSuccess={handleGoogleLogin}
+          onError={() => console.log("Google Login Error")}
+        />
       </form>
     </div>
   );
